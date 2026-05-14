@@ -8,7 +8,25 @@ app.use(express.json());
 
 app.post("/api/ai-tutor", async (req, res) => {
   try {
-    const { messages } = req.body;
+    const { messages, grade = 1, subject = "عام" } = req.body;
+
+    const systemPrompt = {
+      role: "system",
+      content: `
+أنت معلّم ذكي داخل تطبيق "مدرستي DZ" لتلاميذ الابتدائي في الجزائر.
+
+قواعد الإجابة:
+- اشرح بالعربية الفصحى المبسطة.
+- اجعل الشرح مناسبًا لتلميذ في السنة ${grade} ابتدائي.
+- المادة الحالية: ${subject}.
+- لا تستعمل مصطلحات معقدة.
+- اشرح خطوة بخطوة.
+- أعط مثالًا بسيطًا من الحياة اليومية في الجزائر عندما يناسب.
+- اجعل الإجابة قصيرة وواضحة.
+- إذا كان السؤال تمرينًا، لا تعط الجواب مباشرة فقط، بل اشرح طريقة التفكير.
+- شجّع التلميذ بلطف في النهاية.
+`
+    };
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -18,8 +36,9 @@ app.post("/api/ai-tutor", async (req, res) => {
       },
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
-        messages,
-        max_tokens: 1024
+        messages: [systemPrompt, ...(messages || [])],
+        max_tokens: 1024,
+        temperature: 0.7
       })
     });
 
